@@ -2,7 +2,20 @@
 
 Chinese patent IPC classification experiments built from public patent titles and abstracts.
 
-This repository is a released experiment bundle, not just a toy baseline. It includes the cleaned dataset, model comparison tables, out-of-fold prediction caches, a trained IPCPrediction checkpoint set, and optional training scripts for TF-IDF/SVM, a ratio-attention neural model, and Chinese-XLNet.
+This repository releases a cleaned patent IPC dataset, model comparison tables, out-of-fold prediction caches, a trained IPCPrediction checkpoint set, and optional training scripts for TF-IDF/SVM, a ratio-attention neural model, and Chinese-XLNet.
+
+## What This Project Shows
+
+The project covers the full supervised patent-classification workflow:
+
+- building a cleaned IPC-labeled dataset from public patent metadata
+- parsing IPC hierarchy levels and checking label sparsity before training
+- comparing a strong sparse-text baseline, a hierarchy-aware neural model, and a pretrained Chinese transformer
+- releasing prediction caches and checkpoint artifacts instead of only reporting final numbers
+- documenting the practical limits of title-and-abstract classification
+
+The full methodology and result discussion are in [`docs/technical_report.md`](docs/technical_report.md).
+Large downloadable artifacts are described in [`docs/release_assets.md`](docs/release_assets.md).
 
 ## Contents
 
@@ -30,6 +43,14 @@ IPC level 3 OOF accuracy: 0.4656
 ```
 
 Chinese-XLNet reached IPC level 3 OOF accuracy around `0.4875` in the released summary. Full transformer training is GPU-heavy, so the repository publishes the metric tables and optional training script instead of asking every reader to rerun the whole pipeline.
+
+## Method Summary
+
+The raw collection contained 10,000 public patent records. After removing rows without IPC codes and deduplicating by `title + abstract`, the supervised table contains 9,867 samples. The project uses the first IPC code as the main single-label target and evaluates IPC level 1, level 2, and level 3.
+
+The best lightweight model is character TF-IDF plus Linear SVM. It works well because Chinese patent titles and abstracts contain repeated technical phrases that character n-grams can capture without a tokenizer. Chinese-XLNet gives the best released accuracy, but the gain is moderate compared with its GPU cost.
+
+Level-4 IPC labels are kept in the data, but they are too sparse for a stable model here: the released distribution table contains 4,485 level-4 classes, and the median class has only one sample.
 
 ## Quick Start
 
@@ -87,4 +108,3 @@ Running the full Chinese-XLNet five-fold setup is intended for a GPU environment
 ## Data Notice
 
 The dataset contains public patent metadata: titles, abstracts, IPC labels, and derived experiment outputs. See `DATA_NOTICE.md` before redistribution or commercial use.
-
