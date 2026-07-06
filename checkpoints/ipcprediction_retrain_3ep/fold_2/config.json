@@ -1,0 +1,31 @@
+{
+  "data": "data/processed/patent_ipc_clean.csv",
+  "output_dir": "checkpoints/ipcprediction_retrain_3ep/fold_2",
+  "folds": 5,
+  "epochs": 3,
+  "batch_size": 64,
+  "max_vocab": 20000,
+  "min_freq": 2,
+  "top_k": 96,
+  "embed_dim": 128,
+  "num_heads": 4,
+  "num_layers": 1,
+  "dropout": 0.2,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "max_grad_norm": 1.0,
+  "title_weight": 3,
+  "class_weights": "none",
+  "best_metric": "IPC三级_accuracy",
+  "seed": 42,
+  "max_samples": null,
+  "device": "auto",
+  "label_sizes": {
+    "IPC一级": 8,
+    "IPC二级": 114,
+    "IPC三级": 458
+  },
+  "vocab_size": 20000,
+  "fold": 2,
+  "best_epoch": 3
+}

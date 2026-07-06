@@ -1,0 +1,17 @@
+{
+  "experiment": null,
+  "source_dir": null,
+  "folds": 5,
+  "ipc_level_1_accuracy_mean": null,
+  "ipc_level_1_accuracy_std": null,
+  "ipc_level_2_accuracy_mean": null,
+  "ipc_level_2_accuracy_std": null,
+  "ipc_level_3_accuracy_mean": null,
+  "ipc_level_3_accuracy_std": null,
+  "c": 4.0,
+  "ngram_min": 1,
+  "ngram_max": 4,
+  "title_weight": 10,
+  "max_features": 200000,
+  "class_weight": null
+}

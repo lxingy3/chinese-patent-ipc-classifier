@@ -1,0 +1,213 @@
+{
+  "summary": {
+    "folds": 5,
+    "IPC一级_accuracy_mean": 0.401983759995652,
+    "IPC一级_accuracy_std": 0.06602165603181434,
+    "IPC二级_accuracy_mean": 0.16155664979016393,
+    "IPC二级_accuracy_std": 0.02498201841899247,
+    "IPC三级_accuracy_mean": 0.0799269267713301,
+    "IPC三级_accuracy_std": 0.01478079469952008
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "best_epoch": 3,
+      "history": [
+        {
+          "fold": 1,
+          "epoch": 1,
+          "train_loss": 9.277355239552177,
+          "lr": 0.00075,
+          "IPC一级_accuracy": 0.29693924166285973,
+          "IPC二级_accuracy": 0.12425765189584285,
+          "IPC三级_accuracy": 0.058931018730013704
+        },
+        {
+          "fold": 1,
+          "epoch": 2,
+          "train_loss": 8.98911092231037,
+          "lr": 0.0002500000000000001,
+          "IPC一级_accuracy": 0.3074463225216994,
+          "IPC二级_accuracy": 0.12425765189584285,
+          "IPC三级_accuracy": 0.058931018730013704
+        },
+        {
+          "fold": 1,
+          "epoch": 3,
+          "train_loss": 8.866277340707384,
+          "lr": 0.0,
+          "IPC一级_accuracy": 0.31064412973960714,
+          "IPC二级_accuracy": 0.12654179990863407,
+          "IPC三级_accuracy": 0.05938784833257195
+        }
+      ],
+      "test": {
+        "fold": 1,
+        "best_epoch": 3,
+        "IPC一级_accuracy": 0.31064412973960714,
+        "IPC二级_accuracy": 0.12654179990863407,
+        "IPC三级_accuracy": 0.05938784833257195
+      }
+    },
+    {
+      "fold": 2,
+      "best_epoch": 3,
+      "history": [
+        {
+          "fold": 2,
+          "epoch": 1,
+          "train_loss": 9.32792367188276,
+          "lr": 0.00075,
+          "IPC一级_accuracy": 0.31176470588235294,
+          "IPC二级_accuracy": 0.13333333333333333,
+          "IPC三级_accuracy": 0.06323529411764706
+        },
+        {
+          "fold": 2,
+          "epoch": 2,
+          "train_loss": 8.852836183650567,
+          "lr": 0.0002500000000000001,
+          "IPC一级_accuracy": 0.45441176470588235,
+          "IPC二级_accuracy": 0.1553921568627451,
+          "IPC三级_accuracy": 0.07647058823529412
+        },
+        {
+          "fold": 2,
+          "epoch": 3,
+          "train_loss": 8.479539008437255,
+          "lr": 0.0,
+          "IPC一级_accuracy": 0.46078431372549017,
+          "IPC二级_accuracy": 0.16519607843137254,
+          "IPC三级_accuracy": 0.08137254901960785
+        }
+      ],
+      "test": {
+        "fold": 2,
+        "best_epoch": 3,
+        "IPC一级_accuracy": 0.46078431372549017,
+        "IPC二级_accuracy": 0.16519607843137254,
+        "IPC三级_accuracy": 0.08137254901960785
+      }
+    },
+    {
+      "fold": 3,
+      "best_epoch": 3,
+      "history": [
+        {
+          "fold": 3,
+          "epoch": 1,
+          "train_loss": 9.398396122276278,
+          "lr": 0.00075,
+          "IPC一级_accuracy": 0.3016359918200409,
+          "IPC二级_accuracy": 0.13803680981595093,
+          "IPC三级_accuracy": 0.06595092024539877
+        },
+        {
+          "fold": 3,
+          "epoch": 2,
+          "train_loss": 8.959375547829296,
+          "lr": 0.0002500000000000001,
+          "IPC一级_accuracy": 0.4396728016359918,
+          "IPC二级_accuracy": 0.18507157464212678,
+          "IPC三级_accuracy": 0.08844580777096114
+        },
+        {
+          "fold": 3,
+          "epoch": 3,
+          "train_loss": 8.588684535300802,
+          "lr": 0.0,
+          "IPC一级_accuracy": 0.48057259713701433,
+          "IPC二级_accuracy": 0.20194274028629858,
+          "IPC三级_accuracy": 0.10378323108384459
+        }
+      ],
+      "test": {
+        "fold": 3,
+        "best_epoch": 3,
+        "IPC一级_accuracy": 0.48057259713701433,
+        "IPC二级_accuracy": 0.20194274028629858,
+        "IPC三级_accuracy": 0.10378323108384459
+      }
+    },
+    {
+      "fold": 4,
+      "best_epoch": 3,
+      "history": [
+        {
+          "fold": 4,
+          "epoch": 1,
+          "train_loss": 9.427313373742324,
+          "lr": 0.00075,
+          "IPC一级_accuracy": 0.26531699520511454,
+          "IPC二级_accuracy": 0.1427810335641982,
+          "IPC三级_accuracy": 0.0687266915290357
+        },
+        {
+          "fold": 4,
+          "epoch": 2,
+          "train_loss": 9.151023445081652,
+          "lr": 0.0002500000000000001,
+          "IPC一级_accuracy": 0.3665423548215237,
+          "IPC二级_accuracy": 0.1427810335641982,
+          "IPC三级_accuracy": 0.0687266915290357
+        },
+        {
+          "fold": 4,
+          "epoch": 3,
+          "train_loss": 9.010502737663565,
+          "lr": 0.0,
+          "IPC一级_accuracy": 0.4160895045285029,
+          "IPC二级_accuracy": 0.16728822589238146,
+          "IPC三级_accuracy": 0.08417687799680341
+        }
+      ],
+      "test": {
+        "fold": 4,
+        "best_epoch": 3,
+        "IPC一级_accuracy": 0.4160895045285029,
+        "IPC二级_accuracy": 0.16728822589238146,
+        "IPC三级_accuracy": 0.08417687799680341
+      }
+    },
+    {
+      "fold": 5,
+      "best_epoch": 1,
+      "history": [
+        {
+          "fold": 5,
+          "epoch": 1,
+          "train_loss": 9.420037130243694,
+          "lr": 0.00075,
+          "IPC一级_accuracy": 0.34182825484764545,
+          "IPC二级_accuracy": 0.14681440443213298,
+          "IPC三级_accuracy": 0.07091412742382272
+        },
+        {
+          "fold": 5,
+          "epoch": 2,
+          "train_loss": 9.177273676017471,
+          "lr": 0.0002500000000000001,
+          "IPC一级_accuracy": 0.35013850415512465,
+          "IPC二级_accuracy": 0.14681440443213298,
+          "IPC三级_accuracy": 0.07091412742382272
+        },
+        {
+          "fold": 5,
+          "epoch": 3,
+          "train_loss": 9.076891361114495,
+          "lr": 0.0,
+          "IPC一级_accuracy": 0.3601108033240997,
+          "IPC二级_accuracy": 0.14736842105263157,
+          "IPC三级_accuracy": 0.0664819944598338
+        }
+      ],
+      "test": {
+        "fold": 5,
+        "best_epoch": 1,
+        "IPC一级_accuracy": 0.34182825484764545,
+        "IPC二级_accuracy": 0.14681440443213298,
+        "IPC三级_accuracy": 0.07091412742382272
+      }
+    }
+  ]
+}
