@@ -1,0 +1,12 @@
+﻿metric,value
+model,hfl/chinese-xlnet-mid
+samples,9867
+folds,5
+epochs,5
+batch_size,8
+max_length,128
+learning_rate,3e-05
+num_level3_labels,458
+IPC一级_accuracy,0.7560555386642344
+IPC二级_accuracy,0.6016012972534711
+IPC三级_accuracy,0.4874835309617918

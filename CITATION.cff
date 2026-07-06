@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: Chinese Patent IPC Classifier
+message: If this dataset or baseline helps your work, please cite it with the metadata in this file.
+type: dataset
+authors:
+  - family-names: Li
+    given-names: Xiangyu
+abstract: A compact benchmark for Chinese patent IPC prediction from public patent titles and abstracts.
+keywords:
+  - Chinese NLP
+  - patent classification
+  - IPC
+  - text classification
+license: MIT
+
