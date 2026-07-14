@@ -102,7 +102,7 @@ tests/                                  Builder and metric tests
 
 The repository also retains the single-label TF-IDF, ratio-attention, and Chinese-XLNet experiments from v0.2.0. Those experiments predict the first IPC code attached to each record. They are separate from the multilabel results above.
 
-Large v0.2.0 artifacts are listed in [`docs/release_assets.md`](docs/release_assets.md).
+Downloadable data, result bundles, and the earlier checkpoints are listed in [`docs/release_assets.md`](docs/release_assets.md).
 
 ## Limits
 

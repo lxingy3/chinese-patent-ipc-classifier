@@ -7,6 +7,8 @@ authors:
     given-names: Xiangyu
 abstract: A hierarchical multilabel IPC benchmark with 9,867 Chinese patent titles and abstracts, complete IPC assignments, five-fold evaluation code, and out-of-fold predictions.
 repository-code: https://github.com/lxingy3/chinese-patent-ipc-classifier
+version: 0.3.0
+date-released: 2026-07-14
 keywords:
   - Chinese natural language processing
   - patent classification
