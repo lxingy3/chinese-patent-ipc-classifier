@@ -1,120 +1,176 @@
-# Technical Report
+# Hierarchical multilabel benchmark
 
-This project studies supervised IPC classification for Chinese patent titles and abstracts. The release is built around a cleaned public patent metadata table, model comparison outputs, prediction caches, and scripts that make the main experiments inspectable without requiring a full GPU rerun.
+## Task
 
-## Data Source
+A patent may have several IPC codes. Predicting only the first code turns that set into an arbitrary single label and drops information that is present in the source record. This benchmark predicts the full set of IPC subclasses from a Chinese patent title and abstract.
 
-The source records are public patent metadata collected for patent-domain analysis. Each record contains a patent title and abstract, and the IPC labels were completed from public patent web pages where possible. IPC names were resolved from the 2026.01 IPC classification tables.
+The target is the subclass level, such as `G06F`. Class and section scores are derived from the predicted subclasses. A separate hierarchy score gives credit for correctly predicted ancestors while keeping subclass errors visible.
 
-The raw collection contained 10,000 patent records. After removing records without IPC codes and deduplicating by `title + abstract`, the supervised training table contains 9,867 usable samples.
+The older `ipc_level_*` fields and single-label experiments remain in the repository, but they are not used as targets in this benchmark.
 
-The released table keeps the fields needed for reproducible classification:
+## Dataset construction
 
-- patent title and abstract
-- parsed IPC level 1, level 2, level 3, and level 4 labels
-- label distribution tables for each IPC level
-- prediction outputs from the released model comparisons
+The source collection contains 10,000 public Chinese patent records. The cleaned table removes missing IPC records and duplicate normalized title and abstract pairs, leaving 9,867 documents.
 
-For the supervised experiments, the first IPC code is used as the main single-label target. This keeps the evaluation protocol simple and comparable across models, but it also means the task does not fully represent the original multi-label nature of IPC assignment.
+`scripts/build_multilabel_dataset.py` joins the cleaned table to captured IPC lookup results by normalized title and abstract. It performs the following checks before writing a row:
 
-## Preprocessing
+- IPC codes must match the expected section, class, subclass, and group syntax.
+- Repeated lookup results for the same source row must not disagree.
+- Duplicate source texts must have the same complete IPC set.
+- The first IPC code used by the older dataset must appear in the complete set.
 
-The preprocessing pipeline does four main things.
+All 9,867 cleaned rows matched the source collection. The 119 duplicate text groups agreed on their IPC sets. Publication numbers are retained so a released row can be traced back to its public record.
 
-First, it normalizes patent text fields. Empty values are handled consistently, whitespace is collapsed, and the title and abstract are combined as the model input.
-
-Second, it parses IPC hierarchy levels from the main IPC code. The project evaluates level 1, level 2, and level 3 labels. Level 4 is kept in the dataset, but it is too sparse for stable single-label training in this corpus.
-
-Third, it removes unsuitable training rows. Records without IPC labels are dropped, and duplicate `title + abstract` pairs are removed to avoid repeated samples leaking across folds.
-
-Fourth, it analyzes label sparsity before modeling. The final dataset has 8 level-1 classes, 114 level-2 classes, 458 level-3 classes, and 4,485 level-4 classes. At level 3, 40.6% of classes have fewer than 5 samples. At level 4, the median class has only one sample, so level-4 classification is not treated as a reliable training target in this release.
-
-## Model Principles
-
-### TF-IDF + Linear SVM
-
-The strongest lightweight baseline uses character-level TF-IDF with a linear SVM. Character n-grams work well for Chinese patent text because many technical phrases, such as control method, image processing, battery management, and detection device, can be captured without depending on a tokenizer.
-
-The title is repeated before appending the abstract. This gives more weight to the title, which usually contains a compact description of the invention. The best released SVM configuration uses:
-
-- `C=4`
-- character n-grams from 1 to 4
-- `title_weight=10`
-- up to 200,000 TF-IDF features
-
-Each fold fits the vectorizer only on the training split, then transforms the validation split. This avoids vocabulary leakage from validation data.
-
-### IPCPrediction-Style Ratio-Attention Model
-
-The neural baseline follows the idea of IPCPrediction: represent each patent as a set of technical terms, weight those terms by relative importance, and decode IPC labels through a hierarchy-aware classifier.
-
-The original IPCPrediction paper uses patent claims. This dataset only provides titles and abstracts, so the implementation approximates technical terms with character n-grams, alphanumeric fragments, and weighted text features. Each term is embedded, multiplied by a ratio-style weight, passed through attention layers, and decoded into IPC levels.
-
-This model is useful as a structured neural baseline, but the released results show that it needs richer patent text or more data to beat the sparse linear baseline.
-
-### Chinese-XLNet Fine-Tuning
-
-The transformer experiment fine-tunes `hfl/chinese-xlnet-mid` for IPC level-3 classification and derives level-1 and level-2 predictions from the predicted level-3 code. The model uses the title and abstract as input, tokenizes with the XLNet tokenizer, and trains a sequence-classification head over 458 level-3 labels.
-
-The full five-fold run was performed in a GPU environment. The repository publishes the metric summaries and training entrypoint so the result can be inspected without repeating the full GPU run.
-
-## Code Design
-
-The repository separates lightweight reproducibility from full experiment recovery.
-
-- `experiments/baseline_tfidf_svm.py` runs a small local SVM baseline.
-- `experiments/tfidf_svm_cv.py` runs cross-validation for TF-IDF/SVM settings and writes prediction caches.
-- `experiments/ratio_attention_ipc.py` contains the PyTorch ratio-attention IPC model and checkpoint-compatible code.
-- `experiments/chinese_xlnet_oof.py` is the optional GPU entrypoint for Chinese-XLNet five-fold evaluation.
-- `scripts/validate_release.py` checks the release structure, required files, and artifact readability.
-
-The published checkpoint directory contains a five-fold IPCPrediction checkpoint set. The prediction caches are included so readers can audit per-sample outputs and compare models without rerunning every training job.
-
-## Result Analysis
-
-The best lightweight model is TF-IDF + Linear SVM with `C=4`, character n-grams `1-4`, and `title_weight=10`. Its five-fold out-of-fold accuracies are:
-
-| Target | Accuracy |
+| Statistic | Value |
 | --- | ---: |
-| IPC level 1 | 0.7258 |
-| IPC level 2 | 0.5818 |
-| IPC level 3 | 0.4656 |
+| Documents | 9,867 |
+| Documents with more than one complete IPC code | 8,005 |
+| Complete IPC code assignments | 32,831 |
+| Mean complete codes per document | 3.327 |
+| Maximum complete codes on one document | 35 |
+| Unique sections | 8 |
+| Unique classes | 120 |
+| Unique subclasses | 510 |
+| Document-subclass assignments | 16,687 |
 
-Chinese-XLNet improves the best level-3 result, but at a much higher compute cost:
+Several full IPC codes can share one subclass, which is why the subclass assignment count is lower than the complete code count.
 
-| Target | Accuracy |
-| --- | ---: |
-| IPC level 1 | 0.7561 |
-| IPC level 2 | 0.6016 |
-| IPC level 3 | 0.4875 |
+## Benchmark label set
 
-The IPCPrediction-style model is weaker on this dataset. The best released 16-epoch run reaches 0.5502 at level 1, 0.2688 at level 2, and 0.1569 at level 3.
+The released label set contains every subclass found in at least five documents. This leaves 342 of the 510 observed subclasses. It retains 16,324 of 16,687 subclass assignments, or 97.82%.
 
-The main reason is data shape. IPCPrediction-style models are designed for richer patent claims and larger corpora. With fewer than 10,000 title-and-abstract samples and hundreds of level-3 labels, the neural model struggles with long-tail classes. The TF-IDF/SVM baseline is less expressive, but it is very strong for medium-sized short-text classification because the sparse character n-grams capture repeated technical phrases reliably.
+Of the 9,867 documents, 9,740 have at least one released label. The other 127 remain in the dataset but are not part of the model evaluation. For the evaluated documents, metrics against all true subclasses still count excluded rare labels as false negatives.
 
-Chinese-XLNet confirms that pretrained language models can add useful semantic information. Its gain over SVM is real but moderate, and the training cost is much higher. For practical use, SVM is the best local baseline; for accuracy-focused experiments, pretrained transformers are the better direction.
+The label set is defined once from the released corpus. It is benchmark metadata, not a parameter selected from model scores.
 
-## Limitations
+## Model
 
-The dataset uses public patent metadata, but it does not include full claims or specification text. Some patent categories need details that are not visible from the title and abstract alone.
+The reference model uses the same sparse-text settings as the strongest earlier single-label baseline:
 
-The supervised setup converts IPC labels to a single main label. This simplifies evaluation, but it loses secondary IPC assignments and makes the task less faithful to real patent classification.
+- character TF-IDF with 1 to 4 character n-grams
+- at most 200,000 features and a minimum document frequency of 2
+- the title repeated ten times before the abstract
+- one `LinearSVC` per subclass with `C=4` and balanced class weights
 
-The label distribution is heavily imbalanced. Level-3 classification already has many low-support labels, and level-4 classification is not reliable at this dataset size.
+Repeating the title is a simple weighting method. It keeps the feature pipeline inspectable and avoids a tokenizer or a separate feature branch.
 
-The released Chinese-XLNet results are published as summary artifacts because the full five-fold run is GPU-heavy. The script is included, but exact runtime depends on hardware and library versions.
+Each binary classifier returns a decision score. A shared threshold converts those scores to a label set. If no score reaches the threshold, the model emits the highest-scoring subclass so that every document has a prediction.
 
-## Future Work
+## Cross-validation and calibration
 
-The most useful next step is multi-label IPC prediction, where each patent can keep all assigned IPC codes instead of only the first one.
+The outer evaluation uses five-fold iterative multilabel stratification with seed 42. Iterative stratification preserves rare label frequencies more closely than ordinary random splits.
 
-Other improvements worth testing:
+Each outer fold is evaluated as follows:
 
-- hierarchical losses that jointly optimize level 1, level 2, and level 3
-- label embeddings or IPC-tree constraints to reduce impossible predictions
-- patent-domain Chinese pretrained models
-- longer input text from claims or specification sections
-- calibration and confidence reporting for low-support labels
-- external validation on another public patent collection
+1. Split the outer training documents into an inner training set and a 15% validation set.
+2. Fit TF-IDF and the one-vs-rest classifiers on the inner training set.
+3. Search 31 thresholds from -1.00 to 0.50 in increments of 0.05. Select the threshold with the highest validation micro-F1.
+4. Fit a new TF-IDF vocabulary and classifiers on the full outer training set.
+5. Apply the selected threshold to the untouched outer test fold.
 
-The current release is meant to be a clean, inspectable benchmark for this patent corpus rather than a final patent classification system.
+The five outer test predictions are combined in dataset order. No document is scored by a model trained on that document. The test folds do not choose text features, SVM weights, or thresholds.
+
+## Metrics
+
+`benchmark_subclass` metrics use only the 342 released labels in both truth and predictions.
+
+`all_subclass` metrics use the complete true subclass set for each evaluated document. Predictions remain limited to the released labels, so a rare true subclass is a false negative.
+
+`class` and `section` metrics collapse each subclass to its three-character class or one-character section. `hierarchy` metrics expand every subclass into three typed labels: its section, class, and subclass.
+
+The report also includes subclass macro-F1, samples-F1, exact set match, and true and predicted label cardinality.
+
+## Results
+
+### Aggregate out-of-fold scores
+
+| Evaluation | Precision | Recall | F1 | Fold F1 standard deviation |
+| --- | ---: | ---: | ---: | ---: |
+| Benchmark subclasses | 0.4563 | 0.5380 | 0.4938 | 0.0067 |
+| All true subclasses | 0.4563 | 0.5307 | 0.4907 | 0.0065 |
+| IPC classes | 0.5562 | 0.6093 | 0.5815 | 0.0049 |
+| IPC sections | 0.7083 | 0.7487 | 0.7279 | 0.0073 |
+| Expanded hierarchy | 0.5575 | 0.6191 | 0.5867 | 0.0068 |
+
+Subclass samples-F1 is 0.4824 and exact set match is 0.1843. Macro-F1 is 0.2978.
+
+### Fold results
+
+| Fold | Threshold | Subclass precision | Subclass recall | Subclass F1 | Hierarchy F1 |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | -0.45 | 0.4658 | 0.5203 | 0.4916 | 0.5848 |
+| 2 | -0.40 | 0.5009 | 0.5132 | 0.5070 | 0.6002 |
+| 3 | -0.50 | 0.4409 | 0.5608 | 0.4937 | 0.5852 |
+| 4 | -0.55 | 0.4200 | 0.5838 | 0.4885 | 0.5817 |
+| 5 | -0.45 | 0.4690 | 0.5121 | 0.4896 | 0.5827 |
+
+All selected thresholds are negative. The resulting mean predicted cardinality is 1.976 labels per document, compared with a true benchmark cardinality of 1.676. This accounts for the higher recall and lower precision. The threshold is selected by validation score in each fold rather than set after looking at test results.
+
+### Label support
+
+| Documents per label | Labels | Mean F1 | Median F1 | Labels with zero F1 |
+| --- | ---: | ---: | ---: | ---: |
+| 5 to 9 | 87 | 0.1169 | 0.0000 | 61 |
+| 10 to 19 | 79 | 0.1988 | 0.1667 | 28 |
+| 20 to 49 | 96 | 0.3780 | 0.3649 | 3 |
+| 50 to 99 | 46 | 0.4615 | 0.4754 | 0 |
+| 100 or more | 34 | 0.5426 | 0.5430 | 0 |
+
+Fold scores are stable, while performance changes sharply with label support. The benchmark contains 92 subclasses with zero F1, and 89 of them have fewer than 20 examples. Class and section scores are higher because some subclass errors remain within the correct ancestor.
+
+The all-subclass F1 is 0.0031 below the released-label score. Rare labels matter at the label level, but they account for 2.18% of the assignments in this corpus.
+
+## Published artifacts
+
+`experiments/results/multilabel_tfidf_svm/` contains:
+
+- `summary.json`: data coverage, configuration, package versions, aggregate scores, fold means, and fold standard deviations
+- `fold_metrics.csv`: one row per outer fold
+- `threshold_search.csv`: all 155 inner validation threshold results
+- `oof_predictions.csv`: one row per evaluated document with a stable `dataset_row`, fold, publication number, truth, and prediction
+- `label_metrics.csv`: support and out-of-fold precision, recall, and F1 for all 342 labels
+
+`scripts/validate_release.py` checks that every OOF row maps back to the current dataset, that each fold is present, and that no prediction is empty. Unit tests cover code normalization, duplicate handling, threshold selection, the nonempty prediction rule, and hierarchy scoring.
+
+## Reproduction
+
+The checked-in run used Python 3.12.13, NumPy 2.5.1, pandas 3.0.3, scikit-learn 1.9.0, and iterative-stratification 0.1.9. The exact configuration and package versions are stored in `summary.json`.
+
+```bash
+python -m pip install -r requirements-dev.txt
+python scripts/validate_release.py
+python -m pytest -q
+python experiments/multilabel_tfidf_svm.py
+```
+
+Rebuilding the enriched CSV also requires the original source workbook and the captured lookup JSON files. Those raw inputs are not stored in this git repository. With those files available, run:
+
+```bash
+python scripts/build_multilabel_dataset.py \
+  --workbook path/to/source.xlsx \
+  --results-dir path/to/lookup-results \
+  --clean-data path/to/single-label-clean.csv \
+  --output data/processed/patent_ipc_clean.csv \
+  --stats-output data/processed/multilabel_dataset_stats.json
+```
+
+## Earlier single-label results
+
+The v0.2.0 experiments treat the first IPC code as the only target. Their best level-3 accuracy is 0.4656 for TF-IDF with linear SVM and about 0.4875 for Chinese-XLNet. These numbers are not directly comparable with multilabel F1.
+
+The older scripts and result caches remain under `experiments/` and `experiments/results/model_comparison/` so the release history stays inspectable.
+
+## Limits
+
+The corpus comes from one source collection and has no held-out external dataset. Results may change on patents from another time period or source.
+
+Titles and abstracts omit much of the technical detail found in claims and specifications. Some IPC distinctions cannot be resolved from the released text alone.
+
+The 342-label vocabulary excludes 168 rare subclasses. The all-subclass metric measures this gap, but the model cannot produce an excluded label.
+
+The benchmark reports one sparse linear baseline. It does not establish a state-of-the-art result, and it should not be used to automate patent filing or legal decisions.
+
+## References
+
+- K. Sechidis, G. Tsoumakas, and I. Vlahavas. [On the Stratification of Multi-Label Data](https://doi.org/10.1007/978-3-642-23808-6_10). ECML PKDD, 2011.
+- World Intellectual Property Organization. [International Patent Classification FAQ](https://www.wipo.int/en/web/classification-ipc/faq).

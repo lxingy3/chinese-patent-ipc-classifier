@@ -1,110 +1,115 @@
 # Chinese Patent IPC Classifier
 
-Chinese patent IPC classification experiments built from public patent titles and abstracts.
+[![CI](https://github.com/lxingy3/chinese-patent-ipc-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/lxingy3/chinese-patent-ipc-classifier/actions/workflows/ci.yml)
 
-This repository releases a cleaned patent IPC dataset, model comparison tables, out-of-fold prediction caches, a trained IPCPrediction checkpoint set, and optional training scripts for TF-IDF/SVM, a ratio-attention neural model, and Chinese-XLNet.
+A hierarchical multilabel IPC benchmark for Chinese patent titles and abstracts.
 
-## What This Project Shows
+The dataset has 9,867 deduplicated documents and 32,831 IPC code assignments. The benchmark keeps every subclass assigned to a document instead of reducing the task to its first IPC code. It includes five-fold out-of-fold predictions, per-label scores, and the threshold search from each fold.
 
-The project covers the full supervised patent-classification workflow:
+## Results
 
-- building a cleaned IPC-labeled dataset from public patent metadata
-- parsing IPC hierarchy levels and checking label sparsity before training
-- comparing a strong sparse-text baseline, a hierarchy-aware neural model, and a pretrained Chinese transformer
-- releasing prediction caches and checkpoint artifacts instead of only reporting final numbers
-- documenting the practical limits of title-and-abstract classification
+The reference model is character TF-IDF with one-vs-rest linear SVMs. All values below come from one five-fold out-of-fold run.
 
-The full methodology and result discussion are in [`docs/technical_report.md`](docs/technical_report.md).
-Large downloadable artifacts are described in [`docs/release_assets.md`](docs/release_assets.md).
+| Evaluation | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: |
+| Benchmark subclasses | 0.4563 | 0.5380 | 0.4938 |
+| All true subclasses | 0.4563 | 0.5307 | 0.4907 |
+| IPC classes | 0.5562 | 0.6093 | 0.5815 |
+| IPC sections | 0.7083 | 0.7487 | 0.7279 |
+| Expanded hierarchy | 0.5575 | 0.6191 | 0.5867 |
 
-## Contents
+The benchmark subclass set contains 342 labels with at least five documents. It covers 97.82% of the subclass assignments and 98.71% of the documents. The five subclass micro-F1 scores range from 0.4885 to 0.5070.
 
-```text
-data/processed/                         Cleaned patent text and IPC labels
-experiments/                            Runnable experiment entrypoints
-experiments/results/model_comparison/   Model comparison tables and prediction caches
-checkpoints/ipcprediction_retrain_3ep/  Released 5-fold PyTorch checkpoints
-```
+The long tail is still difficult. Subclass macro-F1 is 0.2978, and 92 of the 342 benchmark labels have zero out-of-fold F1. The repository publishes those failures in `label_metrics.csv` rather than reporting only the aggregate score.
 
-## Released Experiments
+## Run it
 
-The main comparison covers:
-
-- IPCPrediction ratio-attention model: 3, 8, 8-title-weighted, and 16 epoch runs
-- TF-IDF + Linear SVM: multiple `C`, n-gram, and title-weight settings
-- Chinese-XLNet: five-fold OOF metric summaries from a GPU run
-
-The best classical model in this release is:
-
-```text
-TF-IDF + Linear SVM
-C=4, character n-gram 1-4, title_weight=10
-IPC level 3 OOF accuracy: 0.4656
-```
-
-Chinese-XLNet reached IPC level 3 OOF accuracy around `0.4875` in the released summary. Full transformer training is GPU-heavy, so the repository publishes the metric tables and optional training script instead of asking every reader to rerun the whole pipeline.
-
-## Method Summary
-
-The raw collection contained 10,000 public patent records. After removing rows without IPC codes and deduplicating by `title + abstract`, the supervised table contains 9,867 samples. The project uses the first IPC code as the main single-label target and evaluates IPC level 1, level 2, and level 3.
-
-The best lightweight model is character TF-IDF plus Linear SVM. It works well because Chinese patent titles and abstracts contain repeated technical phrases that character n-grams can capture without a tokenizer. Chinese-XLNet gives the best released accuracy, but the gain is moderate compared with its GPU cost.
-
-Level-4 IPC labels are kept in the data, but they are too sparse for a stable model here: the released distribution table contains 4,485 level-4 classes, and the median class has only one sample.
-
-## Quick Start
-
-Install the lightweight dependencies:
+Install the Python dependencies, validate the checked-in artifacts, and run the tests:
 
 ```bash
-pip install -r requirements.txt
-```
-
-Validate the release:
-
-```bash
+python -m pip install -r requirements-dev.txt
 python scripts/validate_release.py
+python -m pytest -q
 ```
 
-Run a small TF-IDF baseline:
+Run the full benchmark:
 
 ```bash
-python experiments/baseline_tfidf_svm.py --label ipc_level_2
+python experiments/multilabel_tfidf_svm.py
 ```
 
-Inspect the released model comparison:
+For a smaller local check, sample the dataset and write to a separate directory:
+
+```bash
+python experiments/multilabel_tfidf_svm.py \
+  --max-samples 600 \
+  --output-dir experiments/results/multilabel_tfidf_svm_smoke
+```
+
+## Dataset
+
+| Statistic | Value |
+| --- | ---: |
+| Documents | 9,867 |
+| Documents with more than one IPC code | 8,005 |
+| Complete IPC code assignments | 32,831 |
+| Document-subclass assignments | 16,687 |
+| Unique sections / classes / subclasses | 8 / 120 / 510 |
+| Benchmark subclasses | 342 |
+| Evaluated documents | 9,740 |
+
+`data/processed/patent_ipc_clean.csv` contains the title, abstract, publication number, complete IPC code list, and the derived section, class, and subclass sets. The earlier single-label columns remain in the file for compatibility. See [`data/metadata/FIELD_SCHEMA.md`](data/metadata/FIELD_SCHEMA.md) for the column definitions.
+
+## Evaluation protocol
+
+1. Define the released label set as the 342 subclasses that occur in at least five documents.
+2. Keep the 9,740 documents that have at least one released label.
+3. Build five outer folds with iterative multilabel stratification.
+4. Within each outer training fold, hold out 15% of the training data and choose one decision threshold by validation micro-F1.
+5. Refit TF-IDF and all binary classifiers on the full outer training fold, then score the untouched test fold.
+6. Combine the five test folds into one out-of-fold prediction file.
+
+The label set is fixed benchmark metadata. Text features, SVM weights, and decision thresholds are fitted without the outer test fold. Each document receives at least one prediction; when no score reaches the selected threshold, the highest-scoring subclass is used.
+
+The full protocol, fold results, and support analysis are in [`docs/technical_report.md`](docs/technical_report.md).
+
+## Result files
+
+| File | Contents |
+| --- | --- |
+| `summary.json` | Dataset coverage, run configuration, package versions, aggregate metrics, and fold variation |
+| `fold_metrics.csv` | Threshold and metrics for each outer fold |
+| `threshold_search.csv` | Validation micro-F1 for every threshold tested in each fold |
+| `oof_predictions.csv` | Fold, source dataset row, publication number, true labels, and predictions |
+| `label_metrics.csv` | Support, precision, recall, and F1 for each benchmark subclass |
+
+All five files are under `experiments/results/multilabel_tfidf_svm/` and are checked by `scripts/validate_release.py`.
+
+## Repository layout
 
 ```text
-experiments/results/model_comparison/ipcprediction_summary.csv
-experiments/results/model_comparison/ipcprediction_fold_metrics.csv
-experiments/results/model_comparison/prediction_caches/
-experiments/results/best_tfidf_svm_level3.json
+data/processed/                         Released dataset and label statistics
+data/metadata/                          Field definitions
+experiments/multilabel_tfidf_svm.py     Main benchmark
+experiments/results/multilabel_tfidf_svm/
+                                        Out-of-fold results
+scripts/build_multilabel_dataset.py     Complete-label dataset builder
+scripts/validate_release.py             Data and result checks
+tests/                                  Builder and metric tests
 ```
 
-## Optional Training
+## Earlier experiments
 
-These scripts are included for transparency. They are not required to use the released results.
+The repository also retains the single-label TF-IDF, ratio-attention, and Chinese-XLNet experiments from v0.2.0. Those experiments predict the first IPC code attached to each record. They are separate from the multilabel results above.
 
-```bash
-python experiments/tfidf_svm_cv.py --max-samples 2000
-```
+Large v0.2.0 artifacts are listed in [`docs/release_assets.md`](docs/release_assets.md).
 
-For PyTorch experiments:
+## Limits
 
-```bash
-pip install -r requirements-torch.txt
-python experiments/ratio_attention_ipc.py --max-samples 2000 --epochs 3
-```
+- The input is limited to titles and abstracts. It does not include claims or specification text.
+- The benchmark has no external test collection, so the reported scores measure performance on this corpus only.
+- The model cannot emit the 168 subclasses with fewer than five documents. Metrics against all true subclasses count those assignments as false negatives.
+- Feature settings reuse the strongest earlier single-label SVM configuration. Only the decision threshold is selected inside each outer fold.
+- This is a research benchmark, not a patent search or filing system.
 
-For Chinese-XLNet:
-
-```bash
-pip install -r requirements-xlnet.txt
-python experiments/chinese_xlnet_oof.py --max-samples 1000 --epochs 1
-```
-
-Running the full Chinese-XLNet five-fold setup is intended for a GPU environment.
-
-## Data Notice
-
-The dataset contains public patent metadata: titles, abstracts, IPC labels, and derived experiment outputs. See `DATA_NOTICE.md` before redistribution or commercial use.
+The MIT license covers the code. Patent metadata remains subject to the terms of its public sources; see [`DATA_NOTICE.md`](DATA_NOTICE.md). Citation metadata is available in [`CITATION.cff`](CITATION.cff).

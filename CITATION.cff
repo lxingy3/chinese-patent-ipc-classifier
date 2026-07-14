@@ -1,15 +1,16 @@
 cff-version: 1.2.0
 title: Chinese Patent IPC Classifier
-message: If this dataset or baseline helps your work, please cite it with the metadata in this file.
-type: dataset
+message: If you use this benchmark, please cite it with the metadata in this file.
+type: software
 authors:
   - family-names: Li
     given-names: Xiangyu
-abstract: A compact benchmark for Chinese patent IPC prediction from public patent titles and abstracts.
+abstract: A hierarchical multilabel IPC benchmark with 9,867 Chinese patent titles and abstracts, complete IPC assignments, five-fold evaluation code, and out-of-fold predictions.
+repository-code: https://github.com/lxingy3/chinese-patent-ipc-classifier
 keywords:
-  - Chinese NLP
+  - Chinese natural language processing
   - patent classification
   - IPC
-  - text classification
+  - multilabel classification
+  - hierarchical evaluation
 license: MIT
-
