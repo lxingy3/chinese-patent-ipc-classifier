@@ -1,0 +1,20 @@
+{
+  "documents": 9867,
+  "multilabel_documents": 8005,
+  "mean_ipc_codes_per_document": 3.327353805614675,
+  "max_ipc_codes_per_document": 35,
+  "levels": {
+    "sections": {
+      "labels": 8,
+      "labels_with_at_least_5_documents": 8
+    },
+    "classes": {
+      "labels": 120,
+      "labels_with_at_least_5_documents": 107
+    },
+    "subclasses": {
+      "labels": 510,
+      "labels_with_at_least_5_documents": 342
+    }
+  }
+}
