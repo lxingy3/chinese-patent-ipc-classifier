@@ -1,21 +1,22 @@
-# Release Assets
+# Release assets
 
-Large experiment assets are published through GitHub Releases so the repository stays easy to clone while the full data bundle remains available.
+## v0.3.0
 
-## Asset Layout
+The v0.3.0 release has two project bundles:
 
-The `v0.2.0` release contains three downloadable bundles:
+- `patent-ipc-data-v0.3.0.zip` contains the enriched 9,867-document CSV, dataset statistics, field schema, and data notice.
+- `patent-ipc-multilabel-results-v0.3.0.zip` contains the benchmark script, five out-of-fold result files, model card, technical report, and Python requirements.
 
-- `patent-ipc-data-v0.2.0.zip`: cleaned patent IPC table, IPC hierarchy distributions, and field schema.
-- `patent-ipc-results-v0.2.0.zip`: model comparison tables, fold metrics, and prediction caches.
-- `patent-ipc-checkpoints-v0.2.0.zip`: five-fold IPCPrediction checkpoint files and related vocab/config files.
+`SHA256SUMS-v0.3.0.txt` records the SHA-256 digest of both zip files. The GitHub source archive contains the same code, tests, CI workflow, and checked-in benchmark results.
 
-## When to Use Each Bundle
+This release does not add a trained deployment checkpoint. The reference model is fitted separately inside each cross-validation fold, and the public artifact is its out-of-fold prediction file.
 
-Use the data bundle if you want to inspect the corpus, label hierarchy, or class imbalance.
+## v0.2.0
 
-Use the results bundle if you want to compare model outputs without rerunning training.
+The v0.2.0 release remains available for the earlier single-label experiments:
 
-Use the checkpoint bundle if you want to load the released IPCPrediction-style neural baseline.
+- `patent-ipc-data-v0.2.0.zip` contains the earlier cleaned table, hierarchy distributions, and field schema.
+- `patent-ipc-results-v0.2.0.zip` contains single-label model tables, fold metrics, and prediction caches.
+- `patent-ipc-checkpoints-v0.2.0.zip` contains five ratio-attention checkpoint files with their vocabularies and configurations.
 
-The scripts in `experiments/` are kept in the repository because they are small and useful for review. The release assets keep larger derived files available without turning every clone into a full artifact download.
+The v0.2.0 scores use the first IPC code as the target. They are not directly comparable with the multilabel F1 scores in v0.3.0.
